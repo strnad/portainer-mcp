@@ -1,10 +1,17 @@
 package client
 
 import (
+	"crypto/tls"
+	"fmt"
 	"net/http"
 
+	goruntime "github.com/go-openapi/runtime"
+	httptransport "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 	"github.com/portainer/client-api-go/v2/client"
 	apimodels "github.com/portainer/client-api-go/v2/pkg/models"
+
+	sdkstacks "github.com/portainer/client-api-go/v2/pkg/client/stacks"
 )
 
 // PortainerAPIClient defines the interface for the underlying Portainer API client
@@ -43,7 +50,9 @@ type PortainerAPIClient interface {
 // PortainerClient is a wrapper around the Portainer SDK client
 // that provides simplified access to Portainer API functionality.
 type PortainerClient struct {
-	cli PortainerAPIClient
+	cli       PortainerAPIClient
+	stacksSvc sdkstacks.ClientService
+	authInfo  goruntime.ClientAuthInfoWriter
 }
 
 // ClientOption defines a function that configures a PortainerClient.
@@ -81,7 +90,74 @@ func NewPortainerClient(serverURL string, token string, opts ...ClientOption) *P
 		opt(&options)
 	}
 
-	return &PortainerClient{
-		cli: client.NewPortainerClient(serverURL, token, client.WithSkipTLSVerify(options.skipTLSVerify)),
+	// Create a shared transport for regular stacks API access
+	transport := httptransport.New(serverURL, "/api", []string{"https"})
+	if options.skipTLSVerify {
+		transport.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		}
 	}
+
+	apiKeyAuth := goruntime.ClientAuthInfoWriterFunc(func(r goruntime.ClientRequest, _ strfmt.Registry) error {
+		return r.SetHeaderParam("x-api-key", token)
+	})
+	transport.DefaultAuthentication = apiKeyAuth
+
+	stacksSvc := sdkstacks.New(transport, strfmt.Default)
+
+	sdkCli := client.NewPortainerClient(serverURL, token, client.WithSkipTLSVerify(options.skipTLSVerify))
+
+	return &PortainerClient{
+		cli:       sdkCli,
+		stacksSvc: stacksSvc,
+		authInfo:  apiKeyAuth,
+	}
+}
+
+// NewPortainerClientWithAPIClient creates a new PortainerClient with a custom API client.
+// This is primarily used for testing.
+func NewPortainerClientWithAPIClient(cli PortainerAPIClient) *PortainerClient {
+	return &PortainerClient{
+		cli: cli,
+	}
+}
+
+// ListRegularStacks lists all regular (non-edge) stacks from the Portainer API.
+func (c *PortainerClient) ListRegularStacks() ([]*apimodels.PortainereeStack, error) {
+	if c.stacksSvc == nil {
+		return nil, fmt.Errorf("stacks service not initialized")
+	}
+
+	params := sdkstacks.NewStackListParams()
+	ok, _, err := c.stacksSvc.StackList(params, c.authInfo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list stacks: %w", err)
+	}
+
+	if ok == nil {
+		return nil, nil
+	}
+
+	return ok.Payload, nil
+}
+
+// GetRegularStackFile retrieves the compose file content for a regular (non-edge) stack.
+func (c *PortainerClient) GetRegularStackFile(id int64) (string, error) {
+	if c.stacksSvc == nil {
+		return "", fmt.Errorf("stacks service not initialized")
+	}
+
+	params := sdkstacks.NewStackFileInspectParams().WithID(id)
+	resp, err := c.stacksSvc.StackFileInspect(params, c.authInfo)
+	if err != nil {
+		return "", fmt.Errorf("failed to get stack file: %w", err)
+	}
+
+	if resp.Payload == nil {
+		return "", fmt.Errorf("empty stack file response")
+	}
+
+	return resp.Payload.StackFileContent, nil
 }

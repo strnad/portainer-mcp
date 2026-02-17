@@ -4,31 +4,28 @@ import (
 	"fmt"
 
 	"github.com/portainer/portainer-mcp/pkg/portainer/models"
-	"github.com/portainer/portainer-mcp/pkg/portainer/utils"
 )
 
-// GetStacks retrieves all stacks from the Portainer server.
-// Stacks are the equivalent of Edge Stacks in Portainer.
+// GetStacks retrieves all regular (non-edge) stacks from the Portainer server.
 //
 // Returns:
 //   - A slice of Stack objects
 //   - An error if the operation fails
 func (c *PortainerClient) GetStacks() ([]models.Stack, error) {
-	edgeStacks, err := c.cli.ListEdgeStacks()
+	regularStacks, err := c.ListRegularStacks()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list edge stacks: %w", err)
+		return nil, fmt.Errorf("failed to list stacks: %w", err)
 	}
 
-	stacks := make([]models.Stack, len(edgeStacks))
-	for i, es := range edgeStacks {
-		stacks[i] = models.ConvertEdgeStackToStack(es)
+	stacks := make([]models.Stack, len(regularStacks))
+	for i, s := range regularStacks {
+		stacks[i] = models.ConvertRegularStackToStack(s)
 	}
 
 	return stacks, nil
 }
 
 // GetStackFile retrieves the file content of a stack from the Portainer server.
-// Stacks are the equivalent of Edge Stacks in Portainer.
 //
 // Parameters:
 //   - id: The ID of the stack to retrieve
@@ -37,9 +34,9 @@ func (c *PortainerClient) GetStacks() ([]models.Stack, error) {
 //   - The file content of the stack (Compose file)
 //   - An error if the operation fails
 func (c *PortainerClient) GetStackFile(id int) (string, error) {
-	file, err := c.cli.GetEdgeStackFile(int64(id))
+	file, err := c.GetRegularStackFile(int64(id))
 	if err != nil {
-		return "", fmt.Errorf("failed to get edge stack file: %w", err)
+		return "", fmt.Errorf("failed to get stack file: %w", err)
 	}
 
 	return file, nil
@@ -58,7 +55,7 @@ func (c *PortainerClient) GetStackFile(id int) (string, error) {
 //   - The ID of the created stack
 //   - An error if the operation fails
 func (c *PortainerClient) CreateStack(name, file string, environmentGroupIds []int) (int, error) {
-	id, err := c.cli.CreateEdgeStack(name, file, utils.IntToInt64Slice(environmentGroupIds))
+	id, err := c.cli.CreateEdgeStack(name, file, intToInt64Slice(environmentGroupIds))
 	if err != nil {
 		return 0, fmt.Errorf("failed to create edge stack: %w", err)
 	}
@@ -78,10 +75,18 @@ func (c *PortainerClient) CreateStack(name, file string, environmentGroupIds []i
 // Returns:
 //   - An error if the operation fails
 func (c *PortainerClient) UpdateStack(id int, file string, environmentGroupIds []int) error {
-	err := c.cli.UpdateEdgeStack(int64(id), file, utils.IntToInt64Slice(environmentGroupIds))
+	err := c.cli.UpdateEdgeStack(int64(id), file, intToInt64Slice(environmentGroupIds))
 	if err != nil {
 		return fmt.Errorf("failed to update edge stack: %w", err)
 	}
 
 	return nil
+}
+
+func intToInt64Slice(in []int) []int64 {
+	out := make([]int64, len(in))
+	for i, v := range in {
+		out[i] = int64(v)
+	}
+	return out
 }

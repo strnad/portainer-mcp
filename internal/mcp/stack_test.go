@@ -165,85 +165,85 @@ func TestHandleGetStackFile(t *testing.T) {
 
 func TestHandleCreateStack(t *testing.T) {
 	tests := []struct {
-		name             string
-		inputName        string
-		inputFile        string
-		inputEnvGroupIDs []int
-		mockID           int
-		mockError        error
-		expectError      bool
-		setupParams      func(request *mcp.CallToolRequest)
+		name           string
+		inputName      string
+		inputFile      string
+		inputEndpoint  int
+		mockID         int
+		mockError      error
+		expectError    bool
+		setupParams    func(request *mcp.CallToolRequest)
 	}{
 		{
-			name:             "successful stack creation",
-			inputName:        "test-stack",
-			inputFile:        "version: '3'\nservices:\n  web:\n    image: nginx",
-			inputEnvGroupIDs: []int{1, 2},
-			mockID:           1,
-			mockError:        nil,
-			expectError:      false,
+			name:          "successful stack creation",
+			inputName:     "test-stack",
+			inputFile:     "version: '3'\nservices:\n  web:\n    image: nginx",
+			inputEndpoint: 8,
+			mockID:        1,
+			mockError:     nil,
+			expectError:   false,
 			setupParams: func(request *mcp.CallToolRequest) {
 				request.Params.Arguments = map[string]any{
-					"name":                "test-stack",
-					"file":                "version: '3'\nservices:\n  web:\n    image: nginx",
-					"environmentGroupIds": []any{float64(1), float64(2)},
+					"name":       "test-stack",
+					"file":       "version: '3'\nservices:\n  web:\n    image: nginx",
+					"endpointId": float64(8),
 				}
 			},
 		},
 		{
-			name:             "api error",
-			inputName:        "test-stack",
-			inputFile:        "version: '3'\nservices:\n  web:\n    image: nginx",
-			inputEnvGroupIDs: []int{1, 2},
-			mockID:           0,
-			mockError:        fmt.Errorf("api error"),
-			expectError:      true,
+			name:          "api error",
+			inputName:     "test-stack",
+			inputFile:     "version: '3'\nservices:\n  web:\n    image: nginx",
+			inputEndpoint: 8,
+			mockID:        0,
+			mockError:     fmt.Errorf("api error"),
+			expectError:   true,
 			setupParams: func(request *mcp.CallToolRequest) {
 				request.Params.Arguments = map[string]any{
-					"name":                "test-stack",
-					"file":                "version: '3'\nservices:\n  web:\n    image: nginx",
-					"environmentGroupIds": []any{float64(1), float64(2)},
+					"name":       "test-stack",
+					"file":       "version: '3'\nservices:\n  web:\n    image: nginx",
+					"endpointId": float64(8),
 				}
 			},
 		},
 		{
-			name:             "missing name parameter",
-			inputName:        "",
-			inputFile:        "version: '3'\nservices:\n  web:\n    image: nginx",
-			inputEnvGroupIDs: []int{1, 2},
-			mockID:           0,
-			mockError:        nil,
-			expectError:      true,
+			name:          "missing name parameter",
+			inputName:     "",
+			inputFile:     "version: '3'\nservices:\n  web:\n    image: nginx",
+			inputEndpoint: 8,
+			mockID:        0,
+			mockError:     nil,
+			expectError:   true,
 			setupParams: func(request *mcp.CallToolRequest) {
 				request.Params.Arguments = map[string]any{
-					"file":                "version: '3'\nservices:\n  web:\n    image: nginx",
-					"environmentGroupIds": []any{float64(1), float64(2)},
+					"file":       "version: '3'\nservices:\n  web:\n    image: nginx",
+					"endpointId": float64(8),
 				}
 			},
 		},
 		{
-			name:             "missing file parameter",
-			inputName:        "test-stack",
-			inputFile:        "",
-			inputEnvGroupIDs: []int{1, 2},
-			mockID:           0,
-			mockError:        nil,
-			expectError:      true,
+			name:          "missing file parameter",
+			inputName:     "test-stack",
+			inputFile:     "",
+			inputEndpoint: 8,
+			mockID:        0,
+			mockError:     nil,
+			expectError:   true,
 			setupParams: func(request *mcp.CallToolRequest) {
 				request.Params.Arguments = map[string]any{
-					"name":                "test-stack",
-					"environmentGroupIds": []any{float64(1), float64(2)},
+					"name":       "test-stack",
+					"endpointId": float64(8),
 				}
 			},
 		},
 		{
-			name:             "missing environmentGroupIds parameter",
-			inputName:        "test-stack",
-			inputFile:        "version: '3'\nservices:\n  web:\n    image: nginx",
-			inputEnvGroupIDs: nil,
-			mockID:           0,
-			mockError:        nil,
-			expectError:      true,
+			name:          "missing endpointId parameter",
+			inputName:     "test-stack",
+			inputFile:     "version: '3'\nservices:\n  web:\n    image: nginx",
+			inputEndpoint: 0,
+			mockID:        0,
+			mockError:     nil,
+			expectError:   true,
 			setupParams: func(request *mcp.CallToolRequest) {
 				request.Params.Arguments = map[string]any{
 					"name": "test-stack",
@@ -257,7 +257,7 @@ func TestHandleCreateStack(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := &MockPortainerClient{}
 			if !tt.expectError || tt.mockError != nil {
-				mockClient.On("CreateStack", tt.inputName, tt.inputFile, tt.inputEnvGroupIDs).Return(tt.mockID, tt.mockError)
+				mockClient.On("CreateStack", tt.inputName, tt.inputFile, tt.inputEndpoint).Return(tt.mockID, tt.mockError)
 			}
 
 			server := &PortainerMCPServer{
@@ -297,79 +297,79 @@ func TestHandleCreateStack(t *testing.T) {
 
 func TestHandleUpdateStack(t *testing.T) {
 	tests := []struct {
-		name             string
-		inputID          int
-		inputFile        string
-		inputEnvGroupIDs []int
-		mockError        error
-		expectError      bool
-		setupParams      func(request *mcp.CallToolRequest)
+		name          string
+		inputID       int
+		inputFile     string
+		inputEndpoint int
+		mockError     error
+		expectError   bool
+		setupParams   func(request *mcp.CallToolRequest)
 	}{
 		{
-			name:             "successful stack update",
-			inputID:          1,
-			inputFile:        "version: '3'\nservices:\n  web:\n    image: nginx",
-			inputEnvGroupIDs: []int{1, 2},
-			mockError:        nil,
-			expectError:      false,
+			name:          "successful stack update",
+			inputID:       1,
+			inputFile:     "version: '3'\nservices:\n  web:\n    image: nginx",
+			inputEndpoint: 8,
+			mockError:     nil,
+			expectError:   false,
 			setupParams: func(request *mcp.CallToolRequest) {
 				request.Params.Arguments = map[string]any{
-					"id":                  float64(1),
-					"file":                "version: '3'\nservices:\n  web:\n    image: nginx",
-					"environmentGroupIds": []any{float64(1), float64(2)},
+					"id":         float64(1),
+					"file":       "version: '3'\nservices:\n  web:\n    image: nginx",
+					"endpointId": float64(8),
 				}
 			},
 		},
 		{
-			name:             "api error",
-			inputID:          1,
-			inputFile:        "version: '3'\nservices:\n  web:\n    image: nginx",
-			inputEnvGroupIDs: []int{1, 2},
-			mockError:        fmt.Errorf("api error"),
-			expectError:      true,
+			name:          "api error",
+			inputID:       1,
+			inputFile:     "version: '3'\nservices:\n  web:\n    image: nginx",
+			inputEndpoint: 8,
+			mockError:     fmt.Errorf("api error"),
+			expectError:   true,
 			setupParams: func(request *mcp.CallToolRequest) {
 				request.Params.Arguments = map[string]any{
-					"id":                  float64(1),
-					"file":                "version: '3'\nservices:\n  web:\n    image: nginx",
-					"environmentGroupIds": []any{float64(1), float64(2)},
+					"id":         float64(1),
+					"file":       "version: '3'\nservices:\n  web:\n    image: nginx",
+					"endpointId": float64(8),
 				}
 			},
 		},
 		{
-			name:             "missing id parameter",
-			inputID:          0,
-			inputFile:        "version: '3'\nservices:\n  web:\n    image: nginx",
-			inputEnvGroupIDs: []int{1, 2},
-			mockError:        nil,
-			expectError:      true,
+			name:          "missing id parameter",
+			inputID:       0,
+			inputFile:     "version: '3'\nservices:\n  web:\n    image: nginx",
+			inputEndpoint: 8,
+			mockError:     nil,
+			expectError:   true,
 			setupParams: func(request *mcp.CallToolRequest) {
 				request.Params.Arguments = map[string]any{
-					"file":                "version: '3'\nservices:\n  web:\n    image: nginx",
-					"environmentGroupIds": []any{float64(1), float64(2)},
+					"file":       "version: '3'\nservices:\n  web:\n    image: nginx",
+					"endpointId": float64(8),
 				}
 			},
 		},
 		{
-			name:             "missing file parameter",
-			inputID:          1,
-			inputFile:        "",
-			inputEnvGroupIDs: []int{1, 2},
-			mockError:        nil,
-			expectError:      true,
+			name:          "missing file parameter",
+			inputID:       1,
+			inputFile:     "",
+			inputEndpoint: 8,
+			mockError:     nil,
+			expectError:   true,
 			setupParams: func(request *mcp.CallToolRequest) {
 				request.Params.Arguments = map[string]any{
-					"id":                  float64(1),
-					"environmentGroupIds": []any{float64(1), float64(2)},
+					"id":         float64(1),
+					"endpointId": float64(8),
 				}
 			},
 		},
 		{
-			name:             "missing environmentGroupIds parameter",
-			inputID:          1,
-			inputFile:        "version: '3'\nservices:\n  web:\n    image: nginx",
-			inputEnvGroupIDs: nil,
-			mockError:        nil,
-			expectError:      true,
+			name:          "missing endpointId parameter",
+			inputID:       1,
+			inputFile:     "version: '3'\nservices:\n  web:\n    image: nginx",
+			inputEndpoint: 0,
+			mockError:     nil,
+			expectError:   true,
 			setupParams: func(request *mcp.CallToolRequest) {
 				request.Params.Arguments = map[string]any{
 					"id":   float64(1),
@@ -383,7 +383,7 @@ func TestHandleUpdateStack(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := &MockPortainerClient{}
 			if !tt.expectError || tt.mockError != nil {
-				mockClient.On("UpdateStack", tt.inputID, tt.inputFile, tt.inputEnvGroupIDs).Return(tt.mockError)
+				mockClient.On("UpdateStack", tt.inputID, tt.inputFile, tt.inputEndpoint, true).Return(tt.mockError)
 			}
 
 			server := &PortainerMCPServer{

@@ -392,7 +392,7 @@ tools:
       idempotentHint: true
       openWorldHint: false
   - name: createStack
-    description: Create a new stack
+    description: Create a new Docker Compose stack on a specific environment/endpoint
     parameters:
       - name: name
         description: Name of the stack. Stack name must only consist of lowercase alpha
@@ -408,13 +408,10 @@ tools:
              image:nginx
         type: string
         required: true
-      - name: environmentGroupIds
-        description: "The IDs of the environment groups that the stack belongs to. Must
-          include at least one environment group ID. Example: [1, 2, 3]"
-        type: array
+      - name: endpointId
+        description: "The ID of the environment/endpoint to deploy the stack to. Use listStacks to find endpoint IDs of existing stacks, or listEnvironments to find available endpoints."
+        type: number
         required: true
-        items:
-          type: number
     annotations:
       title: Create Stack
       readOnlyHint: false
@@ -422,7 +419,7 @@ tools:
       idempotentHint: false
       openWorldHint: false
   - name: updateStack
-    description: Update an existing stack
+    description: Update an existing stack with new compose file content. Pulls latest images by default.
     parameters:
       - name: id
         description: The ID of the stack to update
@@ -431,24 +428,75 @@ tools:
       - name: file
         description: >-
           Content of the stack file. The file must be a valid
-          docker-compose.yml file. example: version: 3
-           services:
-             web:
-               image:nginx
+          docker-compose.yml file. example: services:
+           web:
+             image:nginx
         type: string
         required: true
-      - name: environmentGroupIds
-        description: "The IDs of the environment groups that the stack belongs to. Must
-          include at least one environment group ID. Example: [1, 2, 3]"
-        type: array
+      - name: endpointId
+        description: "The ID of the environment/endpoint the stack belongs to. Use listStacks to find the endpoint_id."
+        type: number
         required: true
-        items:
-          type: number
+      - name: pullImage
+        description: "Whether to pull the latest images before redeploying. Defaults to true."
+        type: string
+        required: false
     annotations:
       title: Update Stack
       readOnlyHint: false
       destructiveHint: false
       idempotentHint: true
+      openWorldHint: false
+  - name: startStack
+    description: Start a stopped stack
+    parameters:
+      - name: id
+        description: The ID of the stack to start
+        type: number
+        required: true
+      - name: endpointId
+        description: "The ID of the environment/endpoint the stack belongs to. Use listStacks to find the endpoint_id."
+        type: number
+        required: true
+    annotations:
+      title: Start Stack
+      readOnlyHint: false
+      destructiveHint: false
+      idempotentHint: true
+      openWorldHint: false
+  - name: stopStack
+    description: Stop a running stack
+    parameters:
+      - name: id
+        description: The ID of the stack to stop
+        type: number
+        required: true
+      - name: endpointId
+        description: "The ID of the environment/endpoint the stack belongs to. Use listStacks to find the endpoint_id."
+        type: number
+        required: true
+    annotations:
+      title: Stop Stack
+      readOnlyHint: false
+      destructiveHint: false
+      idempotentHint: true
+      openWorldHint: false
+  - name: deleteStack
+    description: Permanently remove a stack and its containers
+    parameters:
+      - name: id
+        description: The ID of the stack to delete
+        type: number
+        required: true
+      - name: endpointId
+        description: "The ID of the environment/endpoint the stack belongs to. Use listStacks to find the endpoint_id."
+        type: number
+        required: true
+    annotations:
+      title: Delete Stack
+      readOnlyHint: false
+      destructiveHint: true
+      idempotentHint: false
       openWorldHint: false
   ## Tags
   ## ------------------------------------------------------------

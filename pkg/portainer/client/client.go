@@ -161,3 +161,108 @@ func (c *PortainerClient) GetRegularStackFile(id int64) (string, error) {
 
 	return resp.Payload.StackFileContent, nil
 }
+
+// CreateRegularStack creates a new Docker Compose stack via the regular stacks API.
+func (c *PortainerClient) CreateRegularStack(name, file string, endpointId int64) (int64, error) {
+	if c.stacksSvc == nil {
+		return 0, fmt.Errorf("stacks service not initialized")
+	}
+
+	body := &apimodels.StacksComposeStackFromFileContentPayload{
+		Name:             &name,
+		StackFileContent: &file,
+	}
+
+	params := sdkstacks.NewStackCreateDockerStandaloneStringParams().
+		WithEndpointID(endpointId).
+		WithBody(body)
+
+	resp, err := c.stacksSvc.StackCreateDockerStandaloneString(params, c.authInfo)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create stack: %w", err)
+	}
+
+	if resp.Payload == nil {
+		return 0, fmt.Errorf("empty create stack response")
+	}
+
+	return resp.Payload.ID, nil
+}
+
+// UpdateRegularStack updates an existing regular stack with new compose content.
+func (c *PortainerClient) UpdateRegularStack(id, endpointId int64, file string, pullImage bool) error {
+	if c.stacksSvc == nil {
+		return fmt.Errorf("stacks service not initialized")
+	}
+
+	body := &apimodels.StacksUpdateStackPayload{
+		StackFileContent: file,
+		PullImage:        pullImage,
+	}
+
+	params := sdkstacks.NewStackUpdateParams().
+		WithID(id).
+		WithEndpointID(endpointId).
+		WithBody(body)
+
+	_, err := c.stacksSvc.StackUpdate(params, c.authInfo)
+	if err != nil {
+		return fmt.Errorf("failed to update stack: %w", err)
+	}
+
+	return nil
+}
+
+// StartRegularStack starts a stopped stack.
+func (c *PortainerClient) StartRegularStack(id, endpointId int64) error {
+	if c.stacksSvc == nil {
+		return fmt.Errorf("stacks service not initialized")
+	}
+
+	params := sdkstacks.NewStackStartParams().
+		WithID(id).
+		WithEndpointID(endpointId)
+
+	_, err := c.stacksSvc.StackStart(params, c.authInfo)
+	if err != nil {
+		return fmt.Errorf("failed to start stack: %w", err)
+	}
+
+	return nil
+}
+
+// StopRegularStack stops a running stack.
+func (c *PortainerClient) StopRegularStack(id, endpointId int64) error {
+	if c.stacksSvc == nil {
+		return fmt.Errorf("stacks service not initialized")
+	}
+
+	params := sdkstacks.NewStackStopParams().
+		WithID(id).
+		WithEndpointID(endpointId)
+
+	_, err := c.stacksSvc.StackStop(params, c.authInfo)
+	if err != nil {
+		return fmt.Errorf("failed to stop stack: %w", err)
+	}
+
+	return nil
+}
+
+// DeleteRegularStack removes a stack.
+func (c *PortainerClient) DeleteRegularStack(id, endpointId int64) error {
+	if c.stacksSvc == nil {
+		return fmt.Errorf("stacks service not initialized")
+	}
+
+	params := sdkstacks.NewStackDeleteParams().
+		WithID(id).
+		WithEndpointID(endpointId)
+
+	_, err := c.stacksSvc.StackDelete(params, c.authInfo)
+	if err != nil {
+		return fmt.Errorf("failed to delete stack: %w", err)
+	}
+
+	return nil
+}

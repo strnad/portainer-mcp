@@ -169,13 +169,28 @@ func (m *MockPortainerClient) GetStackFile(id int) (string, error) {
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockPortainerClient) CreateStack(name string, file string, environmentGroupIds []int) (int, error) {
-	args := m.Called(name, file, environmentGroupIds)
+func (m *MockPortainerClient) CreateStack(name string, file string, endpointId int) (int, error) {
+	args := m.Called(name, file, endpointId)
 	return args.Int(0), args.Error(1)
 }
 
-func (m *MockPortainerClient) UpdateStack(id int, file string, environmentGroupIds []int) error {
-	args := m.Called(id, file, environmentGroupIds)
+func (m *MockPortainerClient) UpdateStack(id int, file string, endpointId int, pullImage bool) error {
+	args := m.Called(id, file, endpointId, pullImage)
+	return args.Error(0)
+}
+
+func (m *MockPortainerClient) StartStack(id int, endpointId int) error {
+	args := m.Called(id, endpointId)
+	return args.Error(0)
+}
+
+func (m *MockPortainerClient) StopStack(id int, endpointId int) error {
+	args := m.Called(id, endpointId)
+	return args.Error(0)
+}
+
+func (m *MockPortainerClient) DeleteStack(id int, endpointId int) error {
+	args := m.Called(id, endpointId)
 	return args.Error(0)
 }
 

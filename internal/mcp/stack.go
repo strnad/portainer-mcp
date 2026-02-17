@@ -17,6 +17,9 @@ func (s *PortainerMCPServer) AddStackFeatures() {
 	if !s.readOnly {
 		s.addToolIfExists(ToolCreateStack, s.HandleCreateStack())
 		s.addToolIfExists(ToolUpdateStack, s.HandleUpdateStack())
+		s.addToolIfExists(ToolStartStack, s.HandleStartStack())
+		s.addToolIfExists(ToolStopStack, s.HandleStopStack())
+		s.addToolIfExists(ToolDeleteStack, s.HandleDeleteStack())
 	}
 }
 
@@ -68,12 +71,12 @@ func (s *PortainerMCPServer) HandleCreateStack() server.ToolHandlerFunc {
 			return mcp.NewToolResultErrorFromErr("invalid file parameter", err), nil
 		}
 
-		environmentGroupIds, err := parser.GetArrayOfIntegers("environmentGroupIds", true)
+		endpointId, err := parser.GetInt("endpointId", true)
 		if err != nil {
-			return mcp.NewToolResultErrorFromErr("invalid environmentGroupIds parameter", err), nil
+			return mcp.NewToolResultErrorFromErr("invalid endpointId parameter", err), nil
 		}
 
-		id, err := s.cli.CreateStack(name, file, environmentGroupIds)
+		id, err := s.cli.CreateStack(name, file, endpointId)
 		if err != nil {
 			return mcp.NewToolResultErrorFromErr("error creating stack", err), nil
 		}
@@ -96,16 +99,92 @@ func (s *PortainerMCPServer) HandleUpdateStack() server.ToolHandlerFunc {
 			return mcp.NewToolResultErrorFromErr("invalid file parameter", err), nil
 		}
 
-		environmentGroupIds, err := parser.GetArrayOfIntegers("environmentGroupIds", true)
+		endpointId, err := parser.GetInt("endpointId", true)
 		if err != nil {
-			return mcp.NewToolResultErrorFromErr("invalid environmentGroupIds parameter", err), nil
+			return mcp.NewToolResultErrorFromErr("invalid endpointId parameter", err), nil
 		}
 
-		err = s.cli.UpdateStack(id, file, environmentGroupIds)
+		// pullImage defaults to true if not specified
+		pullImage := true
+		pullImageParam, pullErr := parser.GetString("pullImage", false)
+		if pullErr == nil && pullImageParam == "false" {
+			pullImage = false
+		}
+
+		err = s.cli.UpdateStack(id, file, endpointId, pullImage)
 		if err != nil {
 			return mcp.NewToolResultErrorFromErr("failed to update stack", err), nil
 		}
 
 		return mcp.NewToolResultText("Stack updated successfully"), nil
+	}
+}
+
+func (s *PortainerMCPServer) HandleStartStack() server.ToolHandlerFunc {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		parser := toolgen.NewParameterParser(request)
+
+		id, err := parser.GetInt("id", true)
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("invalid id parameter", err), nil
+		}
+
+		endpointId, err := parser.GetInt("endpointId", true)
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("invalid endpointId parameter", err), nil
+		}
+
+		err = s.cli.StartStack(id, endpointId)
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("failed to start stack", err), nil
+		}
+
+		return mcp.NewToolResultText("Stack started successfully"), nil
+	}
+}
+
+func (s *PortainerMCPServer) HandleStopStack() server.ToolHandlerFunc {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		parser := toolgen.NewParameterParser(request)
+
+		id, err := parser.GetInt("id", true)
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("invalid id parameter", err), nil
+		}
+
+		endpointId, err := parser.GetInt("endpointId", true)
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("invalid endpointId parameter", err), nil
+		}
+
+		err = s.cli.StopStack(id, endpointId)
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("failed to stop stack", err), nil
+		}
+
+		return mcp.NewToolResultText("Stack stopped successfully"), nil
+	}
+}
+
+func (s *PortainerMCPServer) HandleDeleteStack() server.ToolHandlerFunc {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		parser := toolgen.NewParameterParser(request)
+
+		id, err := parser.GetInt("id", true)
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("invalid id parameter", err), nil
+		}
+
+		endpointId, err := parser.GetInt("endpointId", true)
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("invalid endpointId parameter", err), nil
+		}
+
+		err = s.cli.DeleteStack(id, endpointId)
+		if err != nil {
+			return mcp.NewToolResultErrorFromErr("failed to delete stack", err), nil
+		}
+
+		return mcp.NewToolResultText("Stack deleted successfully"), nil
 	}
 }

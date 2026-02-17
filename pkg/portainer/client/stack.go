@@ -7,10 +7,6 @@ import (
 )
 
 // GetStacks retrieves all regular (non-edge) stacks from the Portainer server.
-//
-// Returns:
-//   - A slice of Stack objects
-//   - An error if the operation fails
 func (c *PortainerClient) GetStacks() ([]models.Stack, error) {
 	regularStacks, err := c.ListRegularStacks()
 	if err != nil {
@@ -25,14 +21,7 @@ func (c *PortainerClient) GetStacks() ([]models.Stack, error) {
 	return stacks, nil
 }
 
-// GetStackFile retrieves the file content of a stack from the Portainer server.
-//
-// Parameters:
-//   - id: The ID of the stack to retrieve
-//
-// Returns:
-//   - The file content of the stack (Compose file)
-//   - An error if the operation fails
+// GetStackFile retrieves the compose file content of a stack.
 func (c *PortainerClient) GetStackFile(id int) (string, error) {
 	file, err := c.GetRegularStackFile(int64(id))
 	if err != nil {
@@ -42,51 +31,52 @@ func (c *PortainerClient) GetStackFile(id int) (string, error) {
 	return file, nil
 }
 
-// CreateStack creates a new stack on the Portainer server.
-// This function specifically creates a Docker Compose stack.
-// Stacks are the equivalent of Edge Stacks in Portainer.
-//
-// Parameters:
-//   - name: The name of the stack
-//   - file: The file content of the stack (Compose file)
-//   - environmentGroupIds: A slice of environment group IDs to include in the stack
-//
-// Returns:
-//   - The ID of the created stack
-//   - An error if the operation fails
-func (c *PortainerClient) CreateStack(name, file string, environmentGroupIds []int) (int, error) {
-	id, err := c.cli.CreateEdgeStack(name, file, intToInt64Slice(environmentGroupIds))
+// CreateStack creates a new Docker Compose stack on the specified endpoint.
+func (c *PortainerClient) CreateStack(name, file string, endpointId int) (int, error) {
+	id, err := c.CreateRegularStack(name, file, int64(endpointId))
 	if err != nil {
-		return 0, fmt.Errorf("failed to create edge stack: %w", err)
+		return 0, fmt.Errorf("failed to create stack: %w", err)
 	}
 
 	return int(id), nil
 }
 
-// UpdateStack updates an existing stack on the Portainer server.
-// This function specifically updates a Docker Compose stack.
-// Stacks are the equivalent of Edge Stacks in Portainer.
-//
-// Parameters:
-//   - id: The ID of the stack to update
-//   - file: The file content of the stack (Compose file)
-//   - environmentGroupIds: A slice of environment group IDs to include in the stack
-//
-// Returns:
-//   - An error if the operation fails
-func (c *PortainerClient) UpdateStack(id int, file string, environmentGroupIds []int) error {
-	err := c.cli.UpdateEdgeStack(int64(id), file, intToInt64Slice(environmentGroupIds))
+// UpdateStack updates an existing stack with new compose file content.
+func (c *PortainerClient) UpdateStack(id int, file string, endpointId int, pullImage bool) error {
+	err := c.UpdateRegularStack(int64(id), int64(endpointId), file, pullImage)
 	if err != nil {
-		return fmt.Errorf("failed to update edge stack: %w", err)
+		return fmt.Errorf("failed to update stack: %w", err)
 	}
 
 	return nil
 }
 
-func intToInt64Slice(in []int) []int64 {
-	out := make([]int64, len(in))
-	for i, v := range in {
-		out[i] = int64(v)
+// StartStack starts a stopped stack.
+func (c *PortainerClient) StartStack(id int, endpointId int) error {
+	err := c.StartRegularStack(int64(id), int64(endpointId))
+	if err != nil {
+		return fmt.Errorf("failed to start stack: %w", err)
 	}
-	return out
+
+	return nil
+}
+
+// StopStack stops a running stack.
+func (c *PortainerClient) StopStack(id int, endpointId int) error {
+	err := c.StopRegularStack(int64(id), int64(endpointId))
+	if err != nil {
+		return fmt.Errorf("failed to stop stack: %w", err)
+	}
+
+	return nil
+}
+
+// DeleteStack removes a stack.
+func (c *PortainerClient) DeleteStack(id int, endpointId int) error {
+	err := c.DeleteRegularStack(int64(id), int64(endpointId))
+	if err != nil {
+		return fmt.Errorf("failed to delete stack: %w", err)
+	}
+
+	return nil
 }

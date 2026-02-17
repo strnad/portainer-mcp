@@ -39,70 +39,68 @@ It is currently designed to work with a Portainer administrator API token.
 
 ## Installation
 
-You can download pre-built binaries for Linux (amd64, arm64) and macOS (arm64) from the [**Latest Release Page**](https://github.com/portainer/portainer-mcp/releases/latest). Find the appropriate archive for your operating system and architecture under the "Assets" section.
+### Option 1: Quick install via npx (no manual download needed)
 
-**Download the archive:**
-You can usually download this directly from the release page. Alternatively, you can use `curl`. Here's an example for macOS (ARM64) version `v0.2.0`:
+If you have Node.js installed, you can use this fork directly without downloading anything manually. The correct binary for your platform will be downloaded and verified (SHA256) automatically.
 
-```bash
-# Example for macOS (ARM64) - adjust version and architecture as needed
-curl -Lo portainer-mcp-v0.2.0-darwin-arm64.tar.gz https://github.com/portainer/portainer-mcp/releases/download/v0.2.0/portainer-mcp-v0.2.0-darwin-arm64.tar.gz
-```
+Add to your Claude Desktop config (`claude_desktop_config.json`) or Claude Code config (`~/.claude/mcp.json`):
 
-(Linux AMD64 binaries are also available on the release page.)
-
-**(Optional but recommended) Verify the checksum:**
-First, download the corresponding `.md5` checksum file from the release page.
-Example for macOS (ARM64) `v0.2.0`:
-
-```bash
-# Download the checksum file (adjust version/arch)
-curl -Lo portainer-mcp-v0.2.0-darwin-arm64.tar.gz.md5 https://github.com/portainer/portainer-mcp/releases/download/v0.2.0/portainer-mcp-v0.2.0-darwin-arm64.tar.gz.md5
-# Now verify (output should match the content of the .md5 file)
-if [ "$(md5 -q portainer-mcp-v0.2.0-darwin-arm64.tar.gz)" = "$(cat portainer-mcp-v0.2.0-darwin-arm64.tar.gz.md5)" ]; then echo "OK"; else echo "FAILED"; fi
-```
-
-(For Linux, you can use `md5sum -c <checksum_file_name>.md5`)
-If the verification command outputs "OK", the file is intact.
-
-**Extract the archive:**
-
-```bash
-# Adjust the filename based on the downloaded version/OS/architecture
-tar -xzf portainer-mcp-v0.2.0-darwin-arm64.tar.gz
-```
-
-This will extract the `portainer-mcp` executable.
-
-**Move the executable:**
-Move the executable to a location in your `$PATH` (e.g., `/usr/local/bin`) or note its location for the configuration step below.
-
-# Usage
-
-With Claude Desktop, configure it like so:
-
-```
+```json
 {
     "mcpServers": {
         "portainer": {
-            "command": "/path/to/portainer-mcp",
+            "command": "npx",
             "args": [
-                "-server",
-                "[IP]:[PORT]",
-                "-token",
-                "[TOKEN]",
-                "-tools",
-                "/tmp/tools.yaml"
+                "-y", "github:strnad/portainer-mcp-npm",
+                "-server", "your-portainer-host.example.com",
+                "-token", "YOUR_API_TOKEN",
+                "-disable-version-check"
             ]
         }
     }
 }
 ```
 
-Replace `[IP]`, `[PORT]` and `[TOKEN]` with the IP, port and API access token associated with your Portainer instance.
+Replace `your-portainer-host.example.com` and `YOUR_API_TOKEN` with your Portainer server hostname and API access token.
+
+See the [portainer-mcp-npm](https://github.com/strnad/portainer-mcp-npm) wrapper repo for details.
+
+### Option 2: Download binary manually
+
+You can download pre-built binaries for Linux (amd64, arm64) and macOS (arm64) from the [**Latest Release Page**](https://github.com/strnad/portainer-mcp/releases/latest).
+
+```bash
+# Example for Linux AMD64
+curl -Lo portainer-mcp-v0.6.1-linux-amd64.tar.gz https://github.com/strnad/portainer-mcp/releases/download/v0.6.1/portainer-mcp-v0.6.1-linux-amd64.tar.gz
+tar -xzf portainer-mcp-v0.6.1-linux-amd64.tar.gz
+chmod +x portainer-mcp
+```
+
+Move the executable to a location in your `$PATH` (e.g., `/usr/local/bin`) or note its location for the configuration step below.
+
+# Usage
+
+With Claude Desktop or Claude Code, configure it like so:
+
+```json
+{
+    "mcpServers": {
+        "portainer": {
+            "command": "/path/to/portainer-mcp",
+            "args": [
+                "-server", "your-portainer-host.example.com",
+                "-token", "YOUR_API_TOKEN",
+                "-disable-version-check"
+            ]
+        }
+    }
+}
+```
+
+Replace `your-portainer-host.example.com` and `YOUR_API_TOKEN` with your Portainer server hostname and API access token.
 
 > [!NOTE]
-> By default, the tool looks for "tools.yaml" in the same directory as the binary. If the file does not exist, it will be created there with the default tool definitions. You may need to modify this path as described above, particularly when using AI assistants like Claude that have restricted write permissions to the working directory.
+> By default, the tool looks for "tools.yaml" in the same directory as the binary. If the file does not exist, it will be created there with the default tool definitions. You can specify a custom path with the `-tools` flag.
 
 ## Disable Version Check
 

@@ -1,12 +1,24 @@
-# Portainer MCP
-[![Go Report Card](https://goreportcard.com/badge/github.com/portainer/portainer-mcp)](https://goreportcard.com/report/github.com/portainer/portainer-mcp)
-![coverage](https://raw.githubusercontent.com/portainer/portainer-mcp/badges/.badges/main/coverage.svg)
+# Portainer MCP (Fork)
 
-Ever wished you could just ask Portainer what's going on?
+> **This is a fork of [portainer/portainer-mcp](https://github.com/portainer/portainer-mcp) v0.6.0** with a fix for regular stack support.
 
-Now you can! Portainer MCP connects your AI assistant directly to your Portainer environments. Manage Portainer resources such as users and environments, or dive deeper by executing any Docker or Kubernetes command directly through the AI.
+## What's changed
 
-![portainer-mcp-demo](https://downloads.portainer.io/mcp-demo5.gif)
+The upstream version only supports **Edge Stacks** (`/api/edge_stacks`). This means `listStacks` and `getStackFile` return empty results for regular Docker Compose stacks created through the Portainer UI.
+
+This fork fixes that by switching `listStacks` and `getStackFile` to use the **regular stacks API** (`/api/stacks` and `/api/stacks/{id}/file`).
+
+### Changes
+- `listStacks` now queries `/api/stacks` instead of `/api/edge_stacks`
+- `getStackFile` now queries `/api/stacks/{id}/file` instead of `/api/edge_stacks/{id}/file`
+- Stack response now includes `status` (active/inactive) and `endpoint_id` fields
+
+### Files modified
+- `pkg/portainer/client/client.go` — added stacks SDK service and auth for regular API
+- `pkg/portainer/client/stack.go` — rewired `GetStacks()` and `GetStackFile()` to regular stacks
+- `pkg/portainer/models/stack.go` — added `ConvertRegularStackToStack()` conversion + new fields
+
+---
 
 ## Overview
 
@@ -228,11 +240,11 @@ The following table lists the currently (latest version) supported operations th
 | | UpdateAccessGroupTeamAccesses | Update team accesses for an access group | 0.1.0 |
 | | AddEnvironmentToAccessGroup | Add an environment to an access group | 0.1.0 |
 | | RemoveEnvironmentFromAccessGroup | Remove an environment from an access group | 0.1.0 |
-| **Stacks (Edge Stacks)** | | | |
-| | ListStacks | List all available stacks | 0.1.0 |
-| | GetStackFile | Get the compose file for a specific stack | 0.1.0 |
-| | CreateStack | Create a new Docker stack | 0.1.0 |
-| | UpdateStack | Update an existing Docker stack | 0.1.0 |
+| **Stacks** | | | |
+| | ListStacks | List all regular stacks (fixed in this fork, upstream uses edge stacks) | 0.1.0 (fixed) |
+| | GetStackFile | Get the compose file for a specific regular stack | 0.1.0 (fixed) |
+| | CreateStack | Create a new edge stack | 0.1.0 |
+| | UpdateStack | Update an existing edge stack | 0.1.0 |
 | **Tags** | | | |
 | | ListEnvironmentTags | List all available environment tags | 0.1.0 |
 | | CreateEnvironmentTag | Create a new environment tag | 0.1.0 |
